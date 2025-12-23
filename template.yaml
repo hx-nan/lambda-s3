@@ -2,6 +2,15 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: S3 -> Lambda grayscale -> S3 (same bucket), loop prevention, no circular deps.
 
+Parameters:
+  BucketName:
+    Type: String
+    Description: Globally unique bucket used for both input (incoming/) and output (grayscale/).
+    MinLength: 3
+    MaxLength: 63
+    AllowedPattern: '^[a-z0-9][a-z0-9\.-]{1,61}[a-z0-9]$'
+    ConstraintDescription: must be a valid S3 bucket name (lowercase letters, numbers, dots, and hyphens).
+
 Globals:
   Function:
     Runtime: python3.12
@@ -12,6 +21,8 @@ Globals:
 Resources:
   ImagesBucket:
     Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
 
   GrayscaleFunction:
     Type: AWS::Serverless::Function
@@ -20,14 +31,14 @@ Resources:
       Handler: app.lambda_handler
       Environment:
         Variables:
-          BUCKET_NAME: !Ref ImagesBucket
+          BUCKET_NAME: !Ref BucketName
           INPUT_PREFIX: incoming/
           OUTPUT_PREFIX: grayscale/
       Policies:
         - S3ReadPolicy:
-            BucketName: !Ref ImagesBucket
+            BucketName: !Ref BucketName
         - S3WritePolicy:
-            BucketName: !Ref ImagesBucket
+            BucketName: !Ref BucketName
       Events:
         ImageUpload:
           Type: S3
@@ -44,4 +55,4 @@ Resources:
 
 Outputs:
   BucketName:
-    Value: !Ref ImagesBucket
+    Value: !Ref BucketName
