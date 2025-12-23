@@ -12,19 +12,6 @@ Globals:
 Resources:
   ImagesBucket:
     Type: AWS::S3::Bucket
-    DependsOn: GrayscaleInvokePermission
-    Properties:
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Event: s3:ObjectCreated:*
-            Function: !GetAtt GrayscaleFunction.Arn
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: prefix
-                    Value: incoming/
-                  - Name: suffix
-                    Value: .png
 
   GrayscaleFunction:
     Type: AWS::Serverless::Function
@@ -41,15 +28,19 @@ Resources:
             BucketName: !Ref ImagesBucket
         - S3WritePolicy:
             BucketName: !Ref ImagesBucket
-
-  # IMPORTANT: no SourceArn here to avoid circular dependency
-  GrayscaleInvokePermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref GrayscaleFunction
-      Principal: s3.amazonaws.com
-      SourceAccount: !Ref AWS::AccountId
+      Events:
+        ImageUpload:
+          Type: S3
+          Properties:
+            Bucket: !Ref ImagesBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: incoming/
+                  - Name: suffix
+                    Value: .png
 
 Outputs:
   BucketName:
