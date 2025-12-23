@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python and pipx
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pipx
+          python3 -m pipx ensurepath
+
+      - name: Install AWS SAM CLI
+        run: |
+          pipx install aws-sam-cli
+          sam --version
+
+      # # Your SAM workflow
+      # - name: SAM Build
+      #   run: sam build
